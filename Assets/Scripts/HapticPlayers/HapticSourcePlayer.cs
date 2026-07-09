@@ -23,11 +23,14 @@ public class HapticSourcePlayer : HapticPlayerBase
     [Tooltip("Automatically play this haptic when the scene starts.")]
     [SerializeField] private bool playOnStart = false;
 
-    private HapticSource m_hapticSource;
+    public HapticSource HapticSource;
 
     private void Awake()
     {
-        m_hapticSource = GetComponent<HapticSource>();
+        if(HapticSource == null)
+        {
+            HapticSource = GetComponent<HapticSource>();
+        }
         ApplySettings();
     }
 
@@ -41,7 +44,10 @@ public class HapticSourcePlayer : HapticPlayerBase
 
     private void OnValidate()
     {
-        m_hapticSource = GetComponent<HapticSource>();
+        if(HapticSource == null)
+        {
+            HapticSource = GetComponent<HapticSource>();
+        }
         ApplySettings();
     }
 
@@ -67,12 +73,12 @@ public class HapticSourcePlayer : HapticPlayerBase
 
     public void Play(Controller targetController)
     {
-        if (m_hapticSource == null)
+        if (HapticSource == null)
         {
-            m_hapticSource = GetComponent<HapticSource>();
+            HapticSource = GetComponent<HapticSource>();
         }
 
-        if (m_hapticSource == null)
+        if (HapticSource == null)
         {
             Debug.LogError("[HapticSourcePlayer] Missing HapticSource component.", this);
             return;
@@ -80,12 +86,12 @@ public class HapticSourcePlayer : HapticPlayerBase
 
         controller = targetController;
         ApplySettings();
-        m_hapticSource.Play();
+        HapticSource.Play();
     }
 
     public override void Stop()
     {
-        m_hapticSource?.Stop();
+        HapticSource?.Stop();
     }
 
     public void SetAmplitude(float value)
@@ -102,13 +108,13 @@ public class HapticSourcePlayer : HapticPlayerBase
 
     private void ApplySettings()
     {
-        if (m_hapticSource == null)
+        if (HapticSource == null)
         {
             return;
         }
 
-        m_hapticSource.controller = controller;
-        m_hapticSource.amplitude = amplitude;
-        m_hapticSource.frequencyShift = frequencyShift;
+        HapticSource.controller = controller;
+        HapticSource.amplitude = amplitude;
+        HapticSource.frequencyShift = frequencyShift;
     }
 }

@@ -10,7 +10,7 @@ public class LocalizedHapticPlayer : HapticPlayerBase
 {
     [Header("Playback")]
     [Tooltip("The controller location to vibrate.")]
-    [SerializeField] private HapticsLocation hapticsLocation = HapticsLocation.Hand;
+    public HapticsLocation HapticsLocation = HapticsLocation.Hand;
 
     [Tooltip("How long the generated haptic should play.")]
     [Min(0.01f)]
@@ -77,7 +77,7 @@ public class LocalizedHapticPlayer : HapticPlayerBase
             m_playRoutine = null;
         }
 
-        SetControllerLocalizedVibration(hapticsLocation, 0f, 0f);
+        SetControllerLocalizedVibration(HapticsLocation, 0f, 0f);
     }
 
     [ContextMenu("Generate Curves From Presets")]
@@ -95,13 +95,13 @@ public class LocalizedHapticPlayer : HapticPlayerBase
         {
             float frequency = Mathf.Clamp01(frequencyCurve.Evaluate(timer, 1f));
             float amplitude = Mathf.Clamp01(amplitudeCurve.Evaluate(timer, 1f));
-            SetControllerLocalizedVibration(hapticsLocation, frequency, amplitude);
+            SetControllerLocalizedVibration(HapticsLocation, frequency, amplitude);
 
             timer += Time.deltaTime;
             yield return null;
         }
 
-        SetControllerLocalizedVibration(hapticsLocation, 0f, 0f);
+        SetControllerLocalizedVibration(HapticsLocation, 0f, 0f);
         m_playRoutine = null;
     }
 }
