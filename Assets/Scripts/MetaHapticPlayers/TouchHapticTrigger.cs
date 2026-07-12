@@ -21,6 +21,7 @@ public class TouchHapticTrigger : MonoBehaviour
     [Tooltip("Stop the haptic when the touching object exits.")]
     [SerializeField] private bool stopOnExit = false;
 
+
     private bool m_hasPlayed;
 
     private void Reset()
