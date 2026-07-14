@@ -47,13 +47,11 @@ public class MovingBall : MonoBehaviour
     {
         Debug.Log("Trigger detected with " + other.gameObject.name);
         sender.SendCommand(0, 1, 7, 2);
-        sender.SendCommand(1, 1, 7, 2);
     }
 
     void OnTriggerExit(Collider other)
     {
         Debug.Log("Trigger exited with " + other.gameObject.name);
         sender.SendCommand(0, 0, 7, 2);
-        sender.SendCommand(1, 0, 7, 2);
     }
 }

@@ -1334,7 +1334,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b9dc93c7e1ae142448d4a122be86ea8d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Oculus.Haptics::Oculus.Haptics.HapticSource
-  _clip: {fileID: 0}
+  _clip: {fileID: 2460798210113038985, guid: 73aff7403fab33458c6fa940ad7fc380, type: 3}
   _controller: 2
   _loop: 0
   _amplitude: 1

@@ -14,6 +14,7 @@ public class WorkshopHapticsSample : MonoBehaviour
     private void Start()
     {
         hapticSourcePlayer.HapticSource.clip = hapticClips[m_currentHapticSourceIndex];
+        UpdateClipText();
     }
 
     public void MoveToNextHapticClip()
@@ -40,7 +41,7 @@ public class WorkshopHapticsSample : MonoBehaviour
     {
         hapticSourcePlayer.HapticSource.clip = hapticClips[m_currentHapticSourceIndex];
         // Displays the current pattern name on the Play button
-        currentHapticsClipText.text = $".haptic Clip Player:\n Pattern: {hapticClips[m_currentHapticSourceIndex].name}";
+        UpdateClipText();
     }
 
     public void PlaySelectedHapticClip()
@@ -68,6 +69,12 @@ public class WorkshopHapticsSample : MonoBehaviour
             localizedHapticPlayer.HapticsLocation = OVRInput.HapticsLocation.Hand;
         }
         
+        
         currentLocationText.text = $"Localized Haptic: {localizedHapticPlayer.HapticsLocation}";
+    }
+
+    private void UpdateClipText()
+    {
+        currentHapticsClipText.text = $".haptic Clip Player:\n Pattern: {hapticClips[m_currentHapticSourceIndex].name}";
     }
 }
