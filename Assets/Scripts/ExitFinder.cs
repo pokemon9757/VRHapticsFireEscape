@@ -9,6 +9,7 @@ public class ExitFinder : MonoBehaviour
     {
         CalculateRoute();
     }
+    
     Vector3 SnapToNavMesh(Vector3 targetPosition)
     {
         NavMeshHit hit;
@@ -19,6 +20,7 @@ public class ExitFinder : MonoBehaviour
         }
         return targetPosition; // Fallback if no NavMesh found nearby
     }
+
     void CalculateRoute()
     {
         // 1. Create a container to hold the calculated path
