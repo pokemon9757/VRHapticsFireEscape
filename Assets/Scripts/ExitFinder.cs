@@ -3,23 +3,43 @@ using UnityEngine.AI;
 
 public class ExitFinder : MonoBehaviour
 {
+    private enum RouteState
+    {
+        Unknown,
+        MissingExit,
+        WearerOffNavMesh,
+        ExitOffNavMesh,
+        Invalid,
+        Partial,
+        Complete
+    }
+
     [Header("Route")]
+    public Transform Wearer;
     public Transform Exit;
 
     [SerializeField, Min(0.02f)] private float routeUpdateInterval = 0.1f;
     [SerializeField, Min(0.01f)] private float cornerReachDistance = 0.25f;
-    [SerializeField, Min(0.1f)] private float navMeshSampleRadius = 1f;
+    [Tooltip("Search distance used to project the wearer and exit onto the floor NavMesh. VR headsets usually require at least 2 metres.")]
+    [SerializeField, Min(0.1f)] private float navMeshSampleRadius = 3f;
     [SerializeField] private bool logRoute;
 
     private NavMeshPath path;
     private float nextRouteUpdateTime;
+    private RouteState lastRouteState = RouteState.Unknown;
 
     public NavMeshPath Path => path;
     public bool HasRoute { get; private set; }
 
-    void Awake()
+    private Transform WearerTransform => Wearer != null ? Wearer : transform;
+
+    private void Awake()
     {
         path = new NavMeshPath();
+
+        // Existing scene components were previously serialized with a 1 metre
+        // radius, which is often too short to reach the floor from an XR headset.
+        navMeshSampleRadius = Mathf.Max(navMeshSampleRadius, 3f);
     }
     
     private void Update()
@@ -49,7 +69,7 @@ public class ExitFinder : MonoBehaviour
         // already close enough to the wearer and guide toward the first useful one.
         for (int i = 1; i < path.corners.Length; i++)
         {
-            Vector3 toCorner = path.corners[i] - transform.position;
+            Vector3 toCorner = path.corners[i] - WearerTransform.position;
             toCorner.y = 0f;
 
             if (toCorner.sqrMagnitude > minimumSqrDistance)
@@ -62,14 +82,16 @@ public class ExitFinder : MonoBehaviour
         return false;
     }
 
-    private Vector3 SnapToNavMesh(Vector3 targetPosition)
+    private bool TrySnapToNavMesh(Vector3 targetPosition, out Vector3 snappedPosition)
     {
         if (NavMesh.SamplePosition(targetPosition, out NavMeshHit hit, navMeshSampleRadius, NavMesh.AllAreas))
         {
-            return hit.position;
+            snappedPosition = hit.position;
+            return true;
         }
 
-        return targetPosition;
+        snappedPosition = targetPosition;
+        return false;
     }
 
     private void CalculateRoute()
@@ -77,26 +99,69 @@ public class ExitFinder : MonoBehaviour
         if (Exit == null)
         {
             HasRoute = false;
+            ReportRouteStatus(RouteState.MissingExit, "Exit reference is not assigned.", true);
             return;
         }
 
-        Vector3 snappedStart = SnapToNavMesh(transform.position);
-        Vector3 snappedEnd = SnapToNavMesh(Exit.position);
-        HasRoute = NavMesh.CalculatePath(snappedStart, snappedEnd, NavMesh.AllAreas, path)
-            && path.status == NavMeshPathStatus.PathComplete;
+        Vector3 wearerPosition = WearerTransform.position;
+        if (!TrySnapToNavMesh(wearerPosition, out Vector3 snappedStart))
+        {
+            HasRoute = false;
+            ReportRouteStatus(RouteState.WearerOffNavMesh,
+                $"Wearer at {wearerPosition} is not within {navMeshSampleRadius:F1}m of a NavMesh.", true);
+            return;
+        }
 
-        if (!logRoute)
+        if (!TrySnapToNavMesh(Exit.position, out Vector3 snappedEnd))
+        {
+            HasRoute = false;
+            ReportRouteStatus(RouteState.ExitOffNavMesh,
+                $"Exit at {Exit.position} is not within {navMeshSampleRadius:F1}m of a NavMesh.", true);
+            return;
+        }
+
+        bool pathCalculated = NavMesh.CalculatePath(
+            snappedStart, snappedEnd, NavMesh.AllAreas, path);
+
+        HasRoute = pathCalculated && path.status == NavMeshPathStatus.PathComplete;
+
+        if (!pathCalculated || path.status == NavMeshPathStatus.PathInvalid)
+        {
+            ReportRouteStatus(RouteState.Invalid,
+                $"Path is invalid. Start {snappedStart}, exit {snappedEnd}. Check that both points use the same baked NavMeshSurface.",
+                true);
+            return;
+        }
+
+        if (path.status == NavMeshPathStatus.PathPartial)
+        {
+            ReportRouteStatus(RouteState.Partial,
+                $"Path is partial. The wearer and exit are on disconnected NavMesh islands. Start {snappedStart}, exit {snappedEnd}.",
+                true);
+            return;
+        }
+
+        ReportRouteStatus(RouteState.Complete,
+            $"Route complete: {path.corners.Length} corners, {GetPathDistance(path):F1} metres.",
+            false);
+    }
+
+    private void ReportRouteStatus(RouteState state, string status, bool isWarning)
+    {
+        if (state == lastRouteState)
         {
             return;
         }
 
-        if (HasRoute)
+        lastRouteState = state;
+
+        if (isWarning)
         {
-            Debug.Log($"Route to exit: {path.corners.Length} corners, {GetPathDistance(path):F1} metres.", this);
+            Debug.LogWarning($"ExitFinder: {status}", this);
         }
-        else
+        else if (logRoute)
         {
-            Debug.LogWarning("No valid path found between the wearer and the exit.", this);
+            Debug.Log($"ExitFinder: {status}", this);
         }
     }
 
