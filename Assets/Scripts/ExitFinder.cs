@@ -11,12 +11,17 @@ public class ExitFinder : MonoBehaviour
     [SerializeField, Min(0.1f)] private float navMeshSampleRadius = 1f;
     [SerializeField] private bool logRoute;
 
-    private readonly NavMeshPath path = new NavMeshPath();
+    private NavMeshPath path;
     private float nextRouteUpdateTime;
 
     public NavMeshPath Path => path;
     public bool HasRoute { get; private set; }
 
+    void Awake()
+    {
+        path = new NavMeshPath();
+    }
+    
     private void Update()
     {
         if (Time.time >= nextRouteUpdateTime)
