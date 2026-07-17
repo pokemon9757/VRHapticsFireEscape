@@ -5,6 +5,7 @@ using UnityEngine;
 /// North is the wearer's forward direction. Diagonal cues run both adjacent motors.
 /// </summary>
 [RequireComponent(typeof(ExitFinder))]
+[DefaultExecutionOrder(100)]
 public class VibrotactileNavigationController : MonoBehaviour
 {
     [System.Flags]
@@ -35,12 +36,20 @@ public class VibrotactileNavigationController : MonoBehaviour
     [SerializeField] private int duty = 7;
     [SerializeField] private int frequency = 2;
 
+    [Header("Startup")]
+    [Tooltip("Motors remain off for this long after the initial all-off packets are sent.")]
+    [SerializeField, Min(0f)] private float startupDelaySeconds = 2f;
+
     [Header("Direction stability")]
     [Tooltip("Total transition band between neighbouring directions. 10 degrees means a cue must cross 5 degrees beyond the normal boundary before changing.")]
     [SerializeField, Range(0f, 30f)] private float hysteresisDegrees = 10f;
+    [SerializeField] private bool logGuidanceDirection = true;
 
     private int currentSector = -1;
+    private int lastLoggedSector = -2;
     private MotorMask activeMotors = MotorMask.None;
+    private bool isQuitting;
+    private float guidanceEnableTime;
 
     private static readonly MotorMask[] SectorMotors =
     {
@@ -52,6 +61,18 @@ public class VibrotactileNavigationController : MonoBehaviour
         MotorMask.South | MotorMask.West,
         MotorMask.West,
         MotorMask.North | MotorMask.West
+    };
+
+    private static readonly string[] SectorNames =
+    {
+        "North",
+        "North East",
+        "East",
+        "South East",
+        "South",
+        "South West",
+        "West",
+        "North West"
     };
 
     private void Reset()
@@ -73,13 +94,28 @@ public class VibrotactileNavigationController : MonoBehaviour
         }
     }
 
+    private void Start()
+    {
+        // This component runs after TcpSender (execution order 100), so the socket
+        // has had an opportunity to connect before the initial safety packets.
+        ForceAllMotorsOff();
+        guidanceEnableTime = Time.unscaledTime + startupDelaySeconds;
+        Debug.Log($"Vibrotactile motors initialised OFF. Guidance starts in {startupDelaySeconds:F1} seconds.", this);
+    }
+
     private void Update()
     {
+        if (Time.unscaledTime < guidanceEnableTime)
+        {
+            return;
+        }
+
         if (exitFinder == null || sender == null ||
             !exitFinder.TryGetDirectionToNextCorner(out Vector3 worldDirection))
         {
             currentSector = -1;
             SetActiveMotors(MotorMask.None);
+            LogGuidanceDirection(-1);
             return;
         }
 
@@ -92,6 +128,7 @@ public class VibrotactileNavigationController : MonoBehaviour
         float signedAngle = Vector3.SignedAngle(forward, worldDirection, Vector3.up);
         int sector = SelectSector(signedAngle);
         SetActiveMotors(SectorMotors[sector]);
+        LogGuidanceDirection(sector);
     }
 
     private int SelectSector(float signedAngle)
@@ -137,9 +174,45 @@ public class VibrotactileNavigationController : MonoBehaviour
         }
     }
 
+    private void LogGuidanceDirection(int sector)
+    {
+        if (!logGuidanceDirection || sector == lastLoggedSector)
+        {
+            return;
+        }
+
+        string directionName = sector >= 0 ? SectorNames[sector] : "None";
+        Debug.Log($"Vibrotactile guidance direction: {directionName}", this);
+        lastLoggedSector = sector;
+    }
+
     private void OnDisable()
     {
-        SetActiveMotors(MotorMask.None);
+        if (!isQuitting)
+        {
+            ForceAllMotorsOff();
+        }
+
         currentSector = -1;
+    }
+
+    private void OnApplicationQuit()
+    {
+        isQuitting = true;
+        ForceAllMotorsOff();
+    }
+
+    private void ForceAllMotorsOff()
+    {
+        if (sender == null)
+        {
+            return;
+        }
+
+        sender.SendCommand(northAddress, offMode, duty, frequency);
+        sender.SendCommand(eastAddress, offMode, duty, frequency);
+        sender.SendCommand(southAddress, offMode, duty, frequency);
+        sender.SendCommand(westAddress, offMode, duty, frequency);
+        activeMotors = MotorMask.None;
     }
 }

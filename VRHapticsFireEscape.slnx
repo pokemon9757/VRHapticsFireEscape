@@ -52,6 +52,7 @@
   <Project Path="Unity.PerformanceTesting.csproj" />
   <Project Path="Unity.TextMeshPro.csproj" />
   <Project Path="Unity.TextMeshPro.Editor.csproj" />
+  <Project Path="Meta.XR.Audio.Editor.csproj" />
   <Project Path="Oculus.Interaction.OVR.Editor.csproj" />
   <Project Path="Unity.Burst.Editor.csproj" />
   <Project Path="Meta.XR.Editor.Tags.csproj" />
@@ -82,6 +83,7 @@
   <Project Path="Unity.XR.Management.Editor.csproj" />
   <Project Path="Meta.XR.Editor.Notifications.csproj" />
   <Project Path="Unity.XR.OpenXR.Features.MetaQuestSupport.Editor.csproj" />
+  <Project Path="Meta.XR.Audio.csproj" />
   <Project Path="meta.xr.ai.mcpbridge.telemetry.csproj" />
   <Project Path="MetaXRSimulatorCore.Editor.csproj" />
   <Project Path="Meta.XR.MultiplayerBlocks.Shared.Editor.csproj" />

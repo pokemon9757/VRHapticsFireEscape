@@ -70,7 +70,7 @@ public class TcpSender : MonoBehaviour
         }
     }
 
-    private void OnApplicationQuit()
+    private void OnDestroy()
     {
         if (client != null && client.Connected)
             client.Close();
